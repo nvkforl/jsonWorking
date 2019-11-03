@@ -2,11 +2,16 @@ package com.jsonJPA.jsonWorking.handler;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import com.jsonJPA.jsonWorking.valueObj.Clm_flds;
+import com.jsonJPA.jsonWorking.valueObj.Imaging;
 import com.jsonJPA.jsonWorking.valueObj.IntermediateJson;
 import com.jsonJPA.jsonWorking.valueObj.aggregated.AggregatedPayload;
+import com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_fldsAgg;
+import com.jsonJPA.jsonWorking.valueObj.aggregated.ImagingAgg;
 import com.jsonJPA.jsonWorking.valueObj.aggregated.InputFromIntermediate;
 
 public class PojoMergeHandler {
@@ -125,112 +130,241 @@ public class PojoMergeHandler {
 		address.add(address2.trim());
 		aggPayload.setAddress(address);
 
-		com.jsonJPA.jsonWorking.valueObj.Imaging[] imaging = intermediateJson.getPidate().getImaging();
-		com.jsonJPA.jsonWorking.valueObj.aggregated.Imaging[] aggImaging = new com.jsonJPA.jsonWorking.valueObj.aggregated.Imaging[intermediateJson
-				.getPidate().getImaging().length];
+		Imaging[] imaging = intermediateJson.getPidate().getImaging();
+		//ImagingAgg[] aggImaging = new ImagingAgg[intermediateJson.getPidate().getImaging().length];
 
-		for (int i = 0; i < imaging.length; i++) {
-			com.jsonJPA.jsonWorking.valueObj.aggregated.Imaging aggImg = new com.jsonJPA.jsonWorking.valueObj.aggregated.Imaging();
+		/*
+		 * for (int i = 0; i < imaging.length; i++) {
+		 * com.jsonJPA.jsonWorking.valueObj.aggregated.Imaging aggImg = new
+		 * com.jsonJPA.jsonWorking.valueObj.aggregated.Imaging();
+		 * 
+		 * aggImg.setPolicyNumber(imaging[i].getPolicyNumber());
+		 * aggImg.setName(imaging[i].getName());
+		 * 
+		 * com.jsonJPA.jsonWorking.valueObj.Clm_flds[] ClmFldsOrg =
+		 * imaging[i].getClm_flds();
+		 * com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds[] aggClmFlds = new
+		 * com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds[ClmFldsOrg.length];
+		 * 
+		 * Set<com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds> set =
+		 * clm_fieldMethod(ClmFldsOrg);
+		 * 
+		 * aggImg.setClm_flds(set); aggImaging[i] = aggImg; }
+		 */
 
-			aggImg.setPolicyNumber(imaging[i].getPolicyNumber());
-			aggImg.setName(imaging[i].getName());
+		Set<ImagingAgg> set1 = imagingAgg(imaging);
 
-			com.jsonJPA.jsonWorking.valueObj.Clm_flds[] ClmFldsOrg = imaging[i].getClm_flds();
-			Set<com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds> set = new HashSet<com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds>();
-			com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds[] aggClmFlds = new com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds[ClmFldsOrg.length];
+		aggPayload.setImaging(set1);
 
-			for (int k = 0; k < ClmFldsOrg.length; k++) {
+		inputInter.setAggregatedPayload(aggPayload);
 
-				boolean matchFound = false;
+		return inputInter;
+	}
 
-				for (int l = 1; l < ClmFldsOrg.length; l++) {
-					if (k != l && ClmFldsOrg[k] != null && ClmFldsOrg[l] != null
-							&& ClmFldsOrg[k].getClaim_nbr().equalsIgnoreCase(ClmFldsOrg[l].getClaim_nbr())) {
-						com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds policyDetailAgg = new com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds();
+	public static Set<Clm_fldsAgg> clm_fieldMethod(Clm_flds[] ClmFldsOrg) {
+		Set<Clm_fldsAgg> set = new HashSet<Clm_fldsAgg>();
 
-						policyDetailAgg.setClaim_nbr(ClmFldsOrg[k].getClaim_nbr());
+		for (int k = 0; k < ClmFldsOrg.length; k++) {
 
-						Set<String> claimLossDate = new HashSet<String>();
-						claimLossDate.add(ClmFldsOrg[k].getClaim_loss_dt());
-						claimLossDate.add(ClmFldsOrg[l].getClaim_loss_dt());
-						claimLossDate.remove(null);
-						if (claimLossDate.isEmpty()) {
-							claimLossDate.add(null);
-						}
-						policyDetailAgg.setClaim_loss_dt(claimLossDate);
+			boolean matchFound = false;
+			Clm_fldsAgg policyDetailAgg = new Clm_fldsAgg();
 
-						Set<String> clamLossType = new HashSet<String>();
-						clamLossType.add(ClmFldsOrg[k].getClaim_peril());
-						clamLossType.add(ClmFldsOrg[l].getClaim_peril());
-						clamLossType.remove(null);
-						if (clamLossType.isEmpty()) {
-							clamLossType.add(null);
-						}
-						policyDetailAgg.setClaim_peril(clamLossType);
+			for (int l = 1; l < ClmFldsOrg.length; l++) {
+				if (k != l && ClmFldsOrg[k] != null && ClmFldsOrg[l] != null
+						&& ClmFldsOrg[k].getClaim_nbr().equalsIgnoreCase(ClmFldsOrg[l].getClaim_nbr())) {
 
-						Set<String> claimStatus = new HashSet<String>();
-						claimStatus.add(ClmFldsOrg[k].getClaim_status());
-						claimStatus.add(ClmFldsOrg[l].getClaim_status());
-						claimStatus.remove(null);
-						if (claimStatus.isEmpty()) {
-							claimStatus.add(null);
-						}
-						policyDetailAgg.setClaim_status(claimStatus);
-
-						set.add(policyDetailAgg);
-						matchFound = true;
-						ClmFldsOrg[l] = null;
-					}
-				}
-				if (matchFound) {
-					ClmFldsOrg[k] = null;
-				}
-			}
-
-			for (int m = 0; m < ClmFldsOrg.length; m++) {
-				if (ClmFldsOrg[m] != null) {
-
-					com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds policyDetailAgg = new com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_flds();
-
-					policyDetailAgg.setClaim_nbr(ClmFldsOrg[m].getClaim_nbr());
+					policyDetailAgg.setClaim_nbr(ClmFldsOrg[k].getClaim_nbr());
 
 					Set<String> claimLossDate = new HashSet<String>();
-					claimLossDate.add(ClmFldsOrg[m].getClaim_loss_dt());
+					claimLossDate.add(ClmFldsOrg[k].getClaim_loss_dt());
+					claimLossDate.add(ClmFldsOrg[l].getClaim_loss_dt());
+					claimLossDate.remove(null);
 					if (claimLossDate.isEmpty()) {
 						claimLossDate.add(null);
 					}
 					policyDetailAgg.setClaim_loss_dt(claimLossDate);
 
 					Set<String> clamLossType = new HashSet<String>();
-					clamLossType.add(ClmFldsOrg[m].getClaim_peril());
+					clamLossType.add(ClmFldsOrg[k].getClaim_peril());
+					clamLossType.add(ClmFldsOrg[l].getClaim_peril());
+					clamLossType.remove(null);
 					if (clamLossType.isEmpty()) {
 						clamLossType.add(null);
 					}
 					policyDetailAgg.setClaim_peril(clamLossType);
 
 					Set<String> claimStatus = new HashSet<String>();
-					claimStatus.add(ClmFldsOrg[m].getClaim_status());
+					claimStatus.add(ClmFldsOrg[k].getClaim_status());
+					claimStatus.add(ClmFldsOrg[l].getClaim_status());
+					claimStatus.remove(null);
 					if (claimStatus.isEmpty()) {
 						claimStatus.add(null);
 					}
 					policyDetailAgg.setClaim_status(claimStatus);
 
 					set.add(policyDetailAgg);
-					ClmFldsOrg[m] = null;
+					matchFound = true;
+					ClmFldsOrg[l] = null;
+				}
+			}
+			if (matchFound) {
+				ClmFldsOrg[k] = null;
+			}
+		}
+
+		for (int m = 0; m < ClmFldsOrg.length; m++) {
+			if (ClmFldsOrg[m] != null) {
+
+				Clm_fldsAgg policyDetailAgg = new Clm_fldsAgg();
+
+				policyDetailAgg.setClaim_nbr(ClmFldsOrg[m].getClaim_nbr());
+
+				Set<String> claimLossDate = new HashSet<String>();
+				claimLossDate.add(ClmFldsOrg[m].getClaim_loss_dt());
+				if (claimLossDate.isEmpty()) {
+					claimLossDate.add(null);
+				}
+				policyDetailAgg.setClaim_loss_dt(claimLossDate);
+
+				Set<String> clamLossType = new HashSet<String>();
+				clamLossType.add(ClmFldsOrg[m].getClaim_peril());
+				if (clamLossType.isEmpty()) {
+					clamLossType.add(null);
+				}
+				policyDetailAgg.setClaim_peril(clamLossType);
+
+				Set<String> claimStatus = new HashSet<String>();
+				claimStatus.add(ClmFldsOrg[m].getClaim_status());
+				if (claimStatus.isEmpty()) {
+					claimStatus.add(null);
+				}
+				policyDetailAgg.setClaim_status(claimStatus);
+
+				set.add(policyDetailAgg);
+				ClmFldsOrg[m] = null;
+			}
+		}
+		return set;
+	}
+
+	public static Set<ImagingAgg> imagingAgg(Imaging[] imgArr) {
+		Set<ImagingAgg> set = new HashSet<ImagingAgg>();
+
+		for (int a = 0; a < imgArr.length; a++) {
+			boolean imgFound = false;
+			ImagingAgg imagingAgg = new ImagingAgg();
+
+			for (int b = 0; b < imgArr.length; b++) {
+				if (a != b && imgArr[a] != null && imgArr[b] != null
+						&& imgArr[a].getPolicyNumber() == imgArr[b].getPolicyNumber()) {
+
+					imagingAgg.setPolicyNumber(imgArr[a].getPolicyNumber());
+
+					Set<String> name = new HashSet<String>();
+					name.add(imgArr[a].getName());
+					name.add(imgArr[b].getName());
+					name.remove(null);
+					if (name.isEmpty()) {
+						name.add(null);
+					}
+					imagingAgg.setName(name);
+
+					Set<String> time = new HashSet<String>();
+					time.add(imgArr[a].getTime());
+					time.add(imgArr[b].getTime());
+					time.remove(null);
+					if (time.isEmpty()) {
+						time.add(null);
+					}
+					imagingAgg.setTime(time);
+
+					Set<String> location = new HashSet<String>();
+					location.add(imgArr[a].getLocation());
+					location.add(imgArr[b].getLocation());
+					location.remove(null);
+					if (location.isEmpty()) {
+						location.add(null);
+					}
+					imagingAgg.setLocation(location);
+
+					Clm_flds[] clm_flds = imgArr[a].getClm_flds();
+					Clm_flds[] clm_flds1 = imgArr[b].getClm_flds();
+
+					int clm_fldsSize = 0;
+					if (clm_flds != null && clm_flds.length != 0) {
+						clm_fldsSize = clm_flds.length;
+					}
+
+					int clm_fldsSize2 = 0;
+					if (clm_flds != null && clm_flds1.length != 0) {
+						clm_fldsSize2 = clm_flds1.length;
+					}
+
+					Clm_flds[] cmlField = new Clm_flds[clm_fldsSize + clm_fldsSize2];
+
+					int i = 0;
+					if (clm_flds != null && clm_flds.length != 0) {
+						for (Clm_flds clmFlds : clm_flds) {
+							cmlField[i] = clm_flds[i];
+							i++;
+						}
+					}
+
+					if (cmlField != null && cmlField.length != 0) {
+						Set<Clm_fldsAgg> clm_fldsAgg = clm_fieldMethod(cmlField);
+						imagingAgg.setClm_flds(clm_fldsAgg);
+					}
+
+					set.add(imagingAgg);
+					imgFound = true;
+					imgArr[b] = null;
 				}
 			}
 
-			aggImg.setClm_flds(set);
-			aggImaging[i] = aggImg;
+			if (imgFound) {
+				imgArr[a] = null;
+			}
 		}
-		
-		Set<com.jsonJPA.jsonWorking.valueObj.aggregated.Imaging> imgSet = new HashSet<>(Arrays.asList(aggImaging));
 
-		aggPayload.setImaging(imgSet);
+		for (int c = 0; c < imgArr.length; c++) {
+			if (imgArr[c] != null) {
+				ImagingAgg imagingAgg = new ImagingAgg();
 
-		inputInter.setAggregatedPayload(aggPayload);
+				imagingAgg.setPolicyNumber(imgArr[c].getPolicyNumber());
 
-		return inputInter;
+				Set<String> name = new HashSet<String>();
+				name.add(imgArr[c].getName());
+				if (name.isEmpty()) {
+					name.add(null);
+				}
+				imagingAgg.setName(name);
+
+				Set<String> time = new HashSet<String>();
+				time.add(imgArr[c].getTime());
+				if (time.isEmpty()) {
+					time.add(null);
+				}
+				imagingAgg.setTime(time);
+
+				Set<String> location = new HashSet<String>();
+				location.add(imgArr[c].getLocation());
+				if (location.isEmpty()) {
+					location.add(null);
+				}
+				imagingAgg.setLocation(location);
+
+				Clm_flds[] clm_flds = imgArr[c].getClm_flds();
+
+				if (clm_flds != null) {
+					Set<Clm_fldsAgg> clm_fldsAgg = clm_fieldMethod(clm_flds);
+					imagingAgg.setClm_flds(clm_fldsAgg);
+				}
+
+				set.add(imagingAgg);
+				imgArr[c] = null;
+			}
+		}
+		return set;
 	}
 
 }

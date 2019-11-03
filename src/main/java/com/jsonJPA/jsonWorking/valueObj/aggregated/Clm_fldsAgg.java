@@ -2,7 +2,7 @@ package com.jsonJPA.jsonWorking.valueObj.aggregated;
 
 import java.util.Set;
 
-public class Clm_flds {
+public class Clm_fldsAgg {
 	private Set<String> claim_status;
 
 	private Set<String> claim_loss_dt;

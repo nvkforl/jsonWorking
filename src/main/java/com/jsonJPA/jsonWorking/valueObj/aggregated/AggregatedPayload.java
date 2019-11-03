@@ -25,7 +25,7 @@ public class AggregatedPayload {
 
 	private Set<String> tags;
 	
-	private Set<Imaging> imaging;
+	private Set<ImagingAgg> imaging;
 
 	public String getFirstName() {
 		return firstName;
@@ -91,11 +91,11 @@ public class AggregatedPayload {
 		this.dragon = dragon;
 	}
 
-	public Set<Imaging> getImaging() {
+	public Set<ImagingAgg> getImaging() {
 		return imaging;
 	}
 
-	public void setImaging(Set<Imaging> imaging) {
+	public void setImaging(Set<ImagingAgg> imaging) {
 		this.imaging = imaging;
 	}
 
