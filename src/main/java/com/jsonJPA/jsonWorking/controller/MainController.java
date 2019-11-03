@@ -3,18 +3,12 @@ package com.jsonJPA.jsonWorking.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.stream.Stream;
 
-import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,12 +19,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jsonJPA.jsonWorking.Entity.Auto;
+import com.jsonJPA.jsonWorking.constants.RestConstants;
 import com.jsonJPA.jsonWorking.handler.PojoMergeHandler;
 import com.jsonJPA.jsonWorking.repository.AutoRepository;
 import com.jsonJPA.jsonWorking.valueObj.IntermediateJson;
 import com.jsonJPA.jsonWorking.valueObj.PayLoad;
 import com.jsonJPA.jsonWorking.valueObj.ResponceInnerStr;
-import com.jsonJPA.jsonWorking.valueObj.aggregated.AggregatedPayload;
 import com.jsonJPA.jsonWorking.valueObj.aggregated.InputFromIntermediate;
 
 @RestController
@@ -42,16 +36,18 @@ public class MainController {
 	
 	@PostMapping("/aggregate")
 	public List<Auto> updateTable(@RequestBody Auto autoTBL) throws JsonParseException, JsonMappingException, IOException {
+		
+		String rule1 = RestConstants.RULE1;
+		String rule2 = RestConstants.RULE2;
+		
 		List<Auto> autoDetails = autoRepository.getJsonFromAutoTBL(autoTBL.getC_Id(), autoTBL.getSme_Name());
 		System.out.println("autoDetails::::"+autoDetails);
 		ObjectMapper objectMapper = new ObjectMapper();
 		Map<Integer, PayLoad> map1 = new HashMap<Integer, PayLoad>();
-		Map<String, Object> jsonMap = new HashMap<String, Object>();
 		
 		
 		for(int i=0;i<autoDetails.size();i++) {
 			ObjectMapper mapper = new ObjectMapper();
-			Map<String, Object> map = new HashMap<String, Object>();
 			Auto auto = autoDetails.get(i);
 			System.out.println("Hi:::"+auto.getJsonAuto());
 			
@@ -78,17 +74,11 @@ public class MainController {
 		PojoMergeHandler pojoMergeHandler = new PojoMergeHandler();
 		List<InputFromIntermediate> aggList = new ArrayList<InputFromIntermediate>();
 		for(int i=0;i<intermediateJsons.length;i++) {
-			//finalPayLoad = pojoMergeHandler.compareAndMergePojo(finalPayLoad, myList.get(i));
 			aggList.add(pojoMergeHandler.minimizePojo(intermediateJsons[i]));
 		}
 		
-		
-		
-		
 		String jsonStr = objectMapper.writeValueAsString(aggList); 
 		System.out.println("jsonStr::"+jsonStr);
-		
-		
 		
 		List<ResponceInnerStr> resposeInside = new ArrayList<ResponceInnerStr>();
 		Map<String, Object> respose = new HashMap<String, Object>();
