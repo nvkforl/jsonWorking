@@ -1,49 +1,70 @@
 package com.jsonJPA.jsonWorking.valueObj;
 
-public class Imaging {
-	private String name;
+public class Imaging
+{
+    private Clm_flds[] clm_flds;
 
-	private String location;
+    private String policyNumber;
 
-	private String time;
+    private String name;
 
-	private Shipping_address[] shipping_address;
+    private String location;
 
-	public String getName() {
-		return name;
-	}
+    private String time;
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public Clm_flds[] getClm_flds ()
+    {
+        return clm_flds;
+    }
 
-	public String getLocation() {
-		return location;
-	}
+    public void setClm_flds (Clm_flds[] clm_flds)
+    {
+        this.clm_flds = clm_flds;
+    }
 
-	public void setLocation(String location) {
-		this.location = location;
-	}
+    public String getPolicyNumber ()
+    {
+        return policyNumber;
+    }
 
-	public String getTime() {
-		return time;
-	}
+    public void setPolicyNumber (String policyNumber)
+    {
+        this.policyNumber = policyNumber;
+    }
 
-	public void setTime(String time) {
-		this.time = time;
-	}
+    public String getName ()
+    {
+        return name;
+    }
 
-	public Shipping_address[] getShipping_address() {
-		return shipping_address;
-	}
+    public void setName (String name)
+    {
+        this.name = name;
+    }
 
-	public void setShipping_address(Shipping_address[] shipping_address) {
-		this.shipping_address = shipping_address;
-	}
+    public String getLocation ()
+    {
+        return location;
+    }
 
-	@Override
-	public String toString() {
-		return "ClassPojo [name = " + name + ", location = " + location + ", time = " + time + ", shipping_address = "
-				+ shipping_address + "]";
-	}
+    public void setLocation (String location)
+    {
+        this.location = location;
+    }
+
+    public String getTime ()
+    {
+        return time;
+    }
+
+    public void setTime (String time)
+    {
+        this.time = time;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ClassPojo [clm_flds = "+clm_flds+", policyNumber = "+policyNumber+", name = "+name+", location = "+location+", time = "+time+"]";
+    }
 }
