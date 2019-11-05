@@ -1,11 +1,11 @@
-package com.jsonJPA.jsonWorking.valueObj;
+package com.jsonJPA.jsonWorking.valueObj.response;
 
-public class ResponceInnerStr {
+public class AddPhone {
 
 	private String phone;
 	private String cfg = "R";
 	
-	public ResponceInnerStr(String phone) {
+	public AddPhone(String phone) {
 		this.phone = phone;
 		this.cfg = cfg;
 	}
@@ -26,4 +26,5 @@ public class ResponceInnerStr {
 		this.cfg = cfg;
 	}
 
+	
 }
