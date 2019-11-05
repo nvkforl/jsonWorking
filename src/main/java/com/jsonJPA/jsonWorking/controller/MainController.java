@@ -4,6 +4,7 @@ package com.jsonJPA.jsonWorking.controller;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -17,7 +18,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import com.jsonJPA.jsonWorking.Entity.Auto;
 import com.jsonJPA.jsonWorking.constants.RestConstants;
 import com.jsonJPA.jsonWorking.handler.PojoMergeHandler;
@@ -46,6 +56,11 @@ public class MainController {
 		Map<Integer, PayLoad> map1 = new HashMap<Integer, PayLoad>();
 		
 		
+		ArrayNode arrayNode = objectMapper.createArrayNode();
+		//arrayNode.add(firstJsonNode);
+		//arrayNode.add(secondJsonNode);
+		
+		
 		for(int i=0;i<autoDetails.size();i++) {
 			ObjectMapper mapper = new ObjectMapper();
 			Auto auto = autoDetails.get(i);
@@ -54,43 +69,59 @@ public class MainController {
 			
 			mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 			
+			arrayNode.add(auto.getJsonAuto());
+			
 			map1.put(auto.getPk_Id(), mapper.readValue(auto.getJsonAuto(), PayLoad.class));
 			
 			System.out.println("jsonId::"+map1);
 			
 		}
 		
-		IntermediateJson[] intermediateJsons = new IntermediateJson[map1.size()];
-		int j=0;
-		for (Entry<Integer, PayLoad> entry : map1.entrySet()) {
-			IntermediateJson intermediateJson = new IntermediateJson();
-			intermediateJson.setAorCode(entry.getKey());
-			intermediateJson.setPidate(entry.getValue());
-			intermediateJsons[j] = intermediateJson;
-			j++;
-		}
+		JsonNode root = JsonNodeFactory.instance.objectNode();
+		((ObjectNode) root).put("", arrayNode);
+		System.out.println("merged array node #: " + root);
 		
 		
-		PojoMergeHandler pojoMergeHandler = new PojoMergeHandler();
-		List<InputFromIntermediate> aggList = new ArrayList<InputFromIntermediate>();
-		for(int i=0;i<intermediateJsons.length;i++) {
-			aggList.add(pojoMergeHandler.minimizePojo(intermediateJsons[i]));
-		}
+		String jsonStr1 = objectMapper.writeValueAsString(root);
+		System.out.println("jsonStr::"+jsonStr1);
+	
 		
-		String jsonStr = objectMapper.writeValueAsString(aggList); 
-		System.out.println("jsonStr::"+jsonStr);
 		
-		List<ResponceInnerStr> resposeInside = new ArrayList<ResponceInnerStr>();
-		Map<String, Object> respose = new HashMap<String, Object>();
-		
-		resposeInside.add(new ResponceInnerStr("54654"));
-		
-		respose.put("responceDetails", resposeInside);
-		String responseStr= objectMapper.writeValueAsString(respose); 
-		System.out.println("responseStr::::::"+responseStr);
+		/*
+		 * IntermediateJson[] intermediateJsons = new IntermediateJson[map1.size()]; int
+		 * j=0; for (Entry<Integer, PayLoad> entry : map1.entrySet()) { IntermediateJson
+		 * intermediateJson = new IntermediateJson();
+		 * intermediateJson.setAorCode(entry.getKey());
+		 * intermediateJson.setPidate(entry.getValue()); intermediateJsons[j] =
+		 * intermediateJson; j++; }
+		 * 
+		 * 
+		 * PojoMergeHandler pojoMergeHandler = new PojoMergeHandler();
+		 * List<InputFromIntermediate> aggList = new ArrayList<InputFromIntermediate>();
+		 * for(int i=0;i<intermediateJsons.length;i++) {
+		 * aggList.add(pojoMergeHandler.minimizePojo(intermediateJsons[i])); }
+		 * 
+		 * String jsonStr = objectMapper.writeValueAsString(aggList);
+		 * System.out.println("jsonStr::"+jsonStr);
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * List<ResponceInnerStr> resposeInside = new ArrayList<ResponceInnerStr>();
+		 * Map<String, Object> respose = new HashMap<String, Object>();
+		 * 
+		 * resposeInside.add(new ResponceInnerStr("54654"));
+		 * 
+		 * respose.put("responceDetails", resposeInside); String responseStr=
+		 * objectMapper.writeValueAsString(respose);
+		 * System.out.println("responseStr::::::"+responseStr);
+		 */
  		
 		return autoDetails;
 	}
+	
+	
 	
 	
 	
