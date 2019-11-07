@@ -1,5 +1,6 @@
 package com.example.pojo.main;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -120,12 +121,26 @@ public class LevelThreeMerger {
 			}
 		}
 		
-		Set<Imaging> imgSet = new HashSet<Imaging>();
-		for (int a = 0; a < aList.size(); a++) {
-			imgSet.addAll(aList.get(a).getImaging());
+		/*
+		 * Set<Imaging> imgSet = new HashSet<Imaging>(); for (int a = 0; a <
+		 * aList.size(); a++) { imgSet.addAll(aList.get(a).getImaging()); }
+		 */
+		
+		List<Imaging> imaginfFieldsList = new ArrayList<Imaging>();
+		for (int i = 0; i < aList.size(); i++) {
+			Set<Imaging> imagingFieldSET = aList.get(i).getImaging();
+			if (imagingFieldSET != null) {
+				List<Imaging> aList2 = imagingFieldSET.stream().collect(Collectors.toList());
+				for (int k = 0; k < aList2.size(); k++) {
+					imaginfFieldsList.add(aList2.get(k));
+				}
+			}
 		}
 
-		Set<ImagingAgg> set1 = ImagingFieldPojoCompare.imagingAgg(imgSet);
+		Set<Imaging> Clm_fldsSET = imaginfFieldsList.stream().collect(Collectors.toSet());
+		
+
+		Set<ImagingAgg> set1 = ImagingFieldPojoCompare.imagingAggMap(Clm_fldsSET);
 		
 		payloadAgg.setImaging(set1);
 		

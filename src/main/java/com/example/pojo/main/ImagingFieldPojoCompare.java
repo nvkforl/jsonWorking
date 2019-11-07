@@ -1,8 +1,11 @@
 package com.example.pojo.main;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -59,154 +62,159 @@ public class ImagingFieldPojoCompare {
 		imgSet.add(img2);
 		imgSet.add(img3);
 
-		// Set<ImagingAgg> set = imagingAgg(imgArr);
-		Set<ImagingAgg> set = imagingAgg(imgSet);
+		// Set<ImagingAgg> set = imagingAgg(imgSet);
+		Set<ImagingAgg> set = imagingAggMap(imgSet);
 
 		System.out.println("set:::" + set);
 		System.out.println("Size::" + set.size());
 
 	}
 
-	public static Set<ImagingAgg> imagingAgg(Set<Imaging> imgSET) {
+	public static Set<ImagingAgg> imagingAggMap(Set<Imaging> imgSet) {
 		Set<ImagingAgg> set = new HashSet<ImagingAgg>();
-		List<Imaging> aList = imgSET.stream().collect(Collectors.toList());
 
-		for (int a = 0; a < aList.size(); a++) {
-			boolean imgFound = false;
-			Set<String> name = new HashSet<String>();
-			Set<String> time = new HashSet<String>();
-			Set<String> location = new HashSet<String>();
-			
-			ImagingAgg imagingAgg = new ImagingAgg();
-			for (int b = 0; b < aList.size(); b++) {
-				if (a != b && aList.get(a) != null && aList.get(b) != null
-						&& aList.get(a).getPolicyNumber().equalsIgnoreCase(aList.get(b).getPolicyNumber())) {
-					
-					imagingAgg.setPolicyNumber(aList.get(a).getPolicyNumber());
-					
-					
-					name.add(aList.get(a).getName());
-					name.add(aList.get(b).getName());
-					name.remove(null);
-					if (name.isEmpty()) {
-						name.add(null);
-					}
-					imagingAgg.setName(name);
+		List<Imaging> aList = imgSet.stream().collect(Collectors.toList());
+		Map<String, List<Imaging>> claimFieldMap = new HashMap<String, List<Imaging>>();
 
-					
-					time.add(aList.get(a).getTime());
-					time.add(aList.get(b).getTime());
-					time.remove(null);
-					if (time.isEmpty()) {
-						time.add(null);
-					}
-					imagingAgg.setTime(time);
-					
-					
-					location.add(aList.get(a).getLocation());
-					location.add(aList.get(b).getLocation());
-					location.remove(null);
-					if (location.isEmpty()) {
-						location.add(null);
-					}
-					imagingAgg.setLocation(location);
-					
-					Set<Clm_flds> policyDetails = new HashSet<Clm_flds>();
-					if(null != aList.get(a).getClm_flds()) {
-						policyDetails.addAll(aList.get(a).getClm_flds());
-					}
-					if(null != aList.get(b).getClm_flds()) {
-						policyDetails.addAll(aList.get(b).getClm_flds());
-					}
-					
-					if (policyDetails != null && policyDetails.size() != 0) {
-						Set<Clm_fldsAgg> clm_fldsAgg = Clm_FieldPojoCompare.clm_fieldMethod(policyDetails);
-						imagingAgg.setClm_flds(clm_fldsAgg);
-					}
-					
-					set.add(imagingAgg);
-					imgFound = true;
-					aList.set(b,null);
-				}
-			}
-
-			if (imgFound) {
-				aList.set(a,null);
-			}
-			imgFound = false;
-		}
-
-		for (int c = 0; c < aList.size(); c++) {
-			if (aList.get(c) != null) {
-				ImagingAgg imagingAgg = new ImagingAgg();
-
-				imagingAgg.setPolicyNumber(aList.get(c).getPolicyNumber());
-
-				Set<String> name = new HashSet<String>();
-				name.add(aList.get(c).getName());
-				if (name.isEmpty()) {
-					name.add(null);
-				}
-				imagingAgg.setName(name);
-
-				Set<String> time = new HashSet<String>();
-				time.add(aList.get(c).getTime());
-				if (time.isEmpty()) {
-					time.add(null);
-				}
-				imagingAgg.setTime(time);
-
-				Set<String> location = new HashSet<String>();
-				location.add(aList.get(c).getLocation());
-				if (location.isEmpty()) {
-					location.add(null);
-				}
-				imagingAgg.setLocation(location);
-
-				Set<Clm_flds> clm_flds = aList.get(c).getClm_flds();
-
-				if (clm_flds != null) {
-
-					Set<Clm_flds> policyDetails = new HashSet<Clm_flds>();
-					policyDetails.addAll(aList.get(c).getClm_flds());
-
-					if (policyDetails != null && policyDetails.size() != 0) {
-						Set<Clm_fldsAgg> clm_fldsAgg = Clm_FieldPojoCompare.clm_fieldMethod(policyDetails);
-						imagingAgg.setClm_flds(clm_fldsAgg);
-					}
-				}
-
-				set.add(imagingAgg);
-				//aList.remove(c);
-				aList.set(c,null);
+		for (int i = 0; i < aList.size(); i++) {
+			if (!claimFieldMap.containsKey(aList.get(i).getPolicyNumber())) {
+				claimFieldMap.put(aList.get(i).getPolicyNumber(), new ArrayList<Imaging>());
 			}
 		}
-		
+
+		for (int i = 0; i < aList.size(); i++) {
+			claimFieldMap.get(aList.get(i).getPolicyNumber()).add(aList.get(i));
+		}
+
+		for (Map.Entry<String, List<Imaging>> entry : claimFieldMap.entrySet()) {
+			ImagingAgg setAgg = mergePolicyClaimFields(entry.getValue());
+			set.add(setAgg);
+		}
+
 		return set;
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	public static ImagingAgg mergePolicyClaimFields(List<Imaging> listofValues) {
+		ImagingAgg imagingAgg = new ImagingAgg();
+
+		Set<ImagingAgg> clm_fldsAggSET = new HashSet<ImagingAgg>();
+		Set<String> location = new HashSet<String>();
+		Set<String> name = new HashSet<String>();
+		Set<String> time = new HashSet<String>();
+
+		imagingAgg.setPolicyNumber(listofValues.get(0).getPolicyNumber());
+
+		for (int i = 0; i < listofValues.size(); i++) {
+
+			location.add(listofValues.get(i).getLocation());
+			location.remove(null);
+			imagingAgg.setLocation(location);
+
+			name.add(listofValues.get(i).getName());
+			name.remove(null);
+			imagingAgg.setName(name);
+
+			time.add(listofValues.get(i).getTime());
+			time.remove(null);
+			imagingAgg.setName(time);
+		}
+
+		List<Clm_flds> Clm_fldsList = new ArrayList<Clm_flds>();
+		for (int i = 0; i < listofValues.size(); i++) {
+			Set<Clm_flds> claimFieldSET = listofValues.get(i).getClm_flds();
+			if (claimFieldSET != null) {
+				List<Clm_flds> aList = claimFieldSET.stream().collect(Collectors.toList());
+				for (int k = 0; k < aList.size(); k++) {
+					Clm_fldsList.add(aList.get(k));
+				}
+			}
+		}
+
+		Set<Clm_flds> Clm_fldsSET = Clm_fldsList.stream().collect(Collectors.toSet());
+
+		Set<Clm_fldsAgg> set = Clm_FieldPojoCompare.clm_fieldMethodUsingMap(Clm_fldsSET);
+		imagingAgg.setClm_flds(set);
+
+		return imagingAgg;
+	}
+
+	/*
+	 * public static Set<ImagingAgg> imagingAgg(Set<Imaging> imgSET) {
+	 * Set<ImagingAgg> set = new HashSet<ImagingAgg>(); List<Imaging> aList =
+	 * imgSET.stream().collect(Collectors.toList());
+	 * 
+	 * for (int a = 0; a < aList.size(); a++) { boolean imgFound = false;
+	 * Set<String> name = new HashSet<String>(); Set<String> time = new
+	 * HashSet<String>(); Set<String> location = new HashSet<String>();
+	 * 
+	 * ImagingAgg imagingAgg = new ImagingAgg(); for (int b = 0; b < aList.size();
+	 * b++) { if (a != b && aList.get(a) != null && aList.get(b) != null &&
+	 * aList.get(a).getPolicyNumber().equalsIgnoreCase(aList.get(b).getPolicyNumber(
+	 * ))) {
+	 * 
+	 * imagingAgg.setPolicyNumber(aList.get(a).getPolicyNumber());
+	 * 
+	 * 
+	 * name.add(aList.get(a).getName()); name.add(aList.get(b).getName());
+	 * name.remove(null); if (name.isEmpty()) { name.add(null); }
+	 * imagingAgg.setName(name);
+	 * 
+	 * 
+	 * time.add(aList.get(a).getTime()); time.add(aList.get(b).getTime());
+	 * time.remove(null); if (time.isEmpty()) { time.add(null); }
+	 * imagingAgg.setTime(time);
+	 * 
+	 * 
+	 * location.add(aList.get(a).getLocation());
+	 * location.add(aList.get(b).getLocation()); location.remove(null); if
+	 * (location.isEmpty()) { location.add(null); }
+	 * imagingAgg.setLocation(location);
+	 * 
+	 * Set<Clm_flds> policyDetails = new HashSet<Clm_flds>(); if(null !=
+	 * aList.get(a).getClm_flds()) {
+	 * policyDetails.addAll(aList.get(a).getClm_flds()); } if(null !=
+	 * aList.get(b).getClm_flds()) {
+	 * policyDetails.addAll(aList.get(b).getClm_flds()); }
+	 * 
+	 * if (policyDetails != null && policyDetails.size() != 0) { Set<Clm_fldsAgg>
+	 * clm_fldsAgg = Clm_FieldPojoCompare.clm_fieldMethod(policyDetails);
+	 * imagingAgg.setClm_flds(clm_fldsAgg); }
+	 * 
+	 * set.add(imagingAgg); imgFound = true; aList.set(b,null); } }
+	 * 
+	 * if (imgFound) { aList.set(a,null); } imgFound = false; }
+	 * 
+	 * for (int c = 0; c < aList.size(); c++) { if (aList.get(c) != null) {
+	 * ImagingAgg imagingAgg = new ImagingAgg();
+	 * 
+	 * imagingAgg.setPolicyNumber(aList.get(c).getPolicyNumber());
+	 * 
+	 * Set<String> name = new HashSet<String>(); name.add(aList.get(c).getName());
+	 * if (name.isEmpty()) { name.add(null); } imagingAgg.setName(name);
+	 * 
+	 * Set<String> time = new HashSet<String>(); time.add(aList.get(c).getTime());
+	 * if (time.isEmpty()) { time.add(null); } imagingAgg.setTime(time);
+	 * 
+	 * Set<String> location = new HashSet<String>();
+	 * location.add(aList.get(c).getLocation()); if (location.isEmpty()) {
+	 * location.add(null); } imagingAgg.setLocation(location);
+	 * 
+	 * Set<Clm_flds> clm_flds = aList.get(c).getClm_flds();
+	 * 
+	 * if (clm_flds != null) {
+	 * 
+	 * Set<Clm_flds> policyDetails = new HashSet<Clm_flds>();
+	 * policyDetails.addAll(aList.get(c).getClm_flds());
+	 * 
+	 * if (policyDetails != null && policyDetails.size() != 0) { Set<Clm_fldsAgg>
+	 * clm_fldsAgg = Clm_FieldPojoCompare.clm_fieldMethod(policyDetails);
+	 * imagingAgg.setClm_flds(clm_fldsAgg); } }
+	 * 
+	 * set.add(imagingAgg); //aList.remove(c); aList.set(c,null); } }
+	 * 
+	 * return set; }
+	 */
+
 	/*
 	 * public static Set<ImagingAgg> imagingAgg(Imaging[] imgArr) { Set<ImagingAgg>
 	 * set = new HashSet<ImagingAgg>();
