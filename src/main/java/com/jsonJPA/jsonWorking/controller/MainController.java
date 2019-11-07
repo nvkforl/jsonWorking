@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.Map.Entry;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,25 +22,18 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.databind.node.ValueNode;
 import com.jsonJPA.jsonWorking.Entity.Auto;
 import com.jsonJPA.jsonWorking.constants.RestConstants;
 import com.jsonJPA.jsonWorking.handler.PojoMergeHandler;
 import com.jsonJPA.jsonWorking.repository.AutoRepository;
 import com.jsonJPA.jsonWorking.valueObj.IntermediateJson;
 import com.jsonJPA.jsonWorking.valueObj.PayLoad;
+import com.jsonJPA.jsonWorking.valueObj.aggregated.AggregatedPayload;
+import com.jsonJPA.jsonWorking.valueObj.aggregated.Clm_fldsAgg;
+import com.jsonJPA.jsonWorking.valueObj.aggregated.ImagingAgg;
 import com.jsonJPA.jsonWorking.valueObj.aggregated.InputFromIntermediate;
-import com.jsonJPA.jsonWorking.valueObj.response.AddPhone;
-import com.jsonJPA.jsonWorking.valueObj.response.FirstName;
 import com.jsonJPA.jsonWorking.valueObj.response.Responce;
 
 @RestController
@@ -97,49 +92,142 @@ public class MainController {
 
 		objectMapper.setSerializationInclusion(Include.NON_NULL);
 		objectMapper.setSerializationInclusion(Include.NON_EMPTY);
-			
+
 		String jsonStr = objectMapper.writeValueAsString(aggList);
 		System.out.println("jsonStr::" + jsonStr);
 
-		
-		//System.out.println("responseStr::::::" + responseStr);
-		
+		// System.out.println("responseStr::::::" + responseStr);
+
 		Responce responce = new Responce();
 		List<InputFromIntermediate> inputFromIntermediate = new ArrayList<InputFromIntermediate>();
-		
+
 		/*
 		 * String addDetails = getStringDetails(aggList);
 		 * responce.setResponceDetails(addDetails.replace("\"", ""));
 		 */
-		
-		Map<String, Object> respose = createResponse(aggList);
+
+		List respose = createResponse(aggList);
 		objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 		String responseStr = objectMapper.writeValueAsString(respose);
-		System.out.println("JSONArray :: "+responseStr);
+		System.out.println("JSONArray :: " + responseStr);
 
 		return autoDetails;
 	}
 
-	public Map<String, Object> createResponse(List<InputFromIntermediate> aggList) {
-		List resposeInside = new ArrayList();
-		
-		resposeInside.add(new AddPhone("54654"));
-		resposeInside.add(new FirstName(aggList.get(0).getAggregatedPayload().getFirstName()));
-		
-		Map map = new HashMap<>();
-		List policy = new ArrayList();
-		
-		Map map1 = new HashMap<>();
-		map1.put("Yappale", "yemmale");
-		policy.add(map1);
-		map.put("policy", policy);
-		resposeInside.add(map);
-		Map<String, Object> respose = new HashMap<String, Object>();
-		respose.put("pkId", String.valueOf(aggList.get(0).getPkId()));
-		respose.put("responceDetails", resposeInside);
-		return respose;
+	List createResponse(List<InputFromIntermediate> aggList) {
+
+		List outerloop = new ArrayList<>();
+
+		for (int i = 0; i < aggList.size(); i++) {
+			List piiData = new ArrayList();
+
+			AggregatedPayload aggregatedPayload = aggList.get(i).getAggregatedPayload();
+			Set<ImagingAgg> imaging = aggregatedPayload.getImaging();
+			List<ImagingAgg> imagingAggList = imaging.stream().collect(Collectors.toList());
+
+			piiDataMethods(piiData, aggregatedPayload);
+
+			List imgAggOuter = new ArrayList<>();
+			for (int j = 0; j < imagingAggList.size(); j++) {
+				ImagingAgg imagingAggOrg = imagingAggList.get(j);
+				Set<Clm_fldsAgg> clm_fldsAggSET = imagingAggOrg.getClm_flds();
+				List<Clm_fldsAgg> clm_fldsAggOrg = clm_fldsAggSET.stream().collect(Collectors.toList());
+				List imgAddAllValues = new ArrayList<>();
+				List imgAggInner = new ArrayList<>();
+
+				setImgValues(imagingAggList, j, imgAddAllValues);
+
+				List clmfieldListORG = claimFieldExtractor(clm_fldsAggOrg);
+				Map<String, Object> clmFieldMap = new HashMap<>();
+				clmFieldMap.put("claimFields", clmfieldListORG);
+				imgAddAllValues.add(clmFieldMap);
+				imgAggInner.add(imgAddAllValues);
+
+				Map<String, Object> clmFieldDataMap = new HashMap<>();
+				clmFieldDataMap.put("polclmdta", imgAggInner);
+				imgAggOuter.add(clmFieldDataMap);
+			}
+
+			piiData.add(imgAggOuter);
+
+			Map<String, Object> respose = new HashMap<String, Object>();
+			respose.put("pkId", String.valueOf(aggList.get(i).getPkId()));
+			respose.put("piiData", piiData);
+
+			outerloop.add(respose);
+		}
+
+		return outerloop;
 	}
 
-	
+	public void piiDataMethods(List piiData, AggregatedPayload aggregatedPayload) {
+		Set<String> companies = aggregatedPayload.getCompany();
+		if (companies != null && !companies.isEmpty()) {
+			for (String str : companies) {
+				piiData.add("{\"name\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+			}
+		}
+
+		Set<String> address = aggregatedPayload.getAddress();
+		if (address != null && !address.isEmpty()) {
+			for (String str : address) {
+				piiData.add("{\"name\":\"" + address + "\",\"ctg\":\"" + "R" + "\"}");
+			}
+		}
+
+		Set<String> location = aggregatedPayload.getCompany();
+		if (location != null && !location.isEmpty()) {
+			for (String str : location) {
+				piiData.add("{\"location\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+			}
+		}
+	}
+
+	public void setImgValues(List<ImagingAgg> imagingAggList, int j, List imgAddAllValues) {
+		String policyNumber = imagingAggList.get(j).getPolicyNumber();
+		if (policyNumber != null) {
+			imgAddAllValues.add("{\"claim_nbr\":\"" + policyNumber + "\",\"ctg\":\"" + "R" + "\"}");
+		}
+
+		Set<String> names = imagingAggList.get(j).getName();
+		if (names != null && !names.isEmpty()) {
+			for (String str : names) {
+				imgAddAllValues.add("{\"name\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+			}
+		}
+	}
+
+	public List claimFieldExtractor(List<Clm_fldsAgg> clm_fldsAggOrg) {
+		List clmfieldListORG = new ArrayList<>();
+		for (int k = 0; k < clm_fldsAggOrg.size(); k++) {
+			List<String> clmfieldList = new ArrayList<>();
+
+			String clmNumber = clm_fldsAggOrg.get(k).getClaim_nbr();
+			clmfieldList.add("{\"claim_nbr\":\"" + clmNumber + "\",\"ctg\":\"" + "R" + "\"}");
+
+			Set<String> setclmPeril = clm_fldsAggOrg.get(k).getClaim_peril();
+			if (setclmPeril != null && !setclmPeril.isEmpty()) {
+				for (String str : setclmPeril) {
+					clmfieldList.add("{\"claim_peril\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+				}
+			}
+
+			Set<String> setclmLossdate = clm_fldsAggOrg.get(k).getClaim_loss_dt();
+			if (setclmLossdate != null && !setclmLossdate.isEmpty()) {
+				for (String str : setclmLossdate) {
+					clmfieldList.add("{\"claim_loss_dt\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+				}
+			}
+
+			Set<String> setclmStatus = clm_fldsAggOrg.get(k).getClaim_status();
+			if (setclmStatus != null && !setclmStatus.isEmpty()) {
+				for (String str : setclmStatus) {
+					clmfieldList.add("{\"claim_status\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+				}
+			}
+			clmfieldListORG.add(clmfieldList);
+		}
+		return clmfieldListORG;
+	}
 
 }
