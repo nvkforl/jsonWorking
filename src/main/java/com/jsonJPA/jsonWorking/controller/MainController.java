@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,7 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -107,9 +110,12 @@ public class MainController {
 		 */
 
 		List respose = createResponse(aggList);
-		objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
+		// objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
+		objectMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, false);
+		objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
 		String responseStr = objectMapper.writeValueAsString(respose);
-		System.out.println("JSONArray :: " + responseStr);
+		String str2 = unescape(responseStr);
+		System.out.println("JSONArray :: " + str2);
 
 		return autoDetails;
 	}
@@ -139,20 +145,20 @@ public class MainController {
 
 				List clmfieldListORG = claimFieldExtractor(clm_fldsAggOrg);
 				Map<String, Object> clmFieldMap = new HashMap<>();
-				clmFieldMap.put("claimFields", clmfieldListORG);
+				clmFieldMap.put("\"claimFields\"", clmfieldListORG);
 				imgAddAllValues.add(clmFieldMap);
 				imgAggInner.add(imgAddAllValues);
 
 				Map<String, Object> clmFieldDataMap = new HashMap<>();
-				clmFieldDataMap.put("polclmdta", imgAggInner);
+				clmFieldDataMap.put("\"polclmdta\"", imgAggInner);
 				imgAggOuter.add(clmFieldDataMap);
 			}
 
 			piiData.add(imgAggOuter);
 
 			Map<String, Object> respose = new HashMap<String, Object>();
-			respose.put("pkId", String.valueOf(aggList.get(i).getPkId()));
-			respose.put("piiData", piiData);
+			respose.put("\"pkId\"", String.valueOf(aggList.get(i).getPkId()));
+			respose.put("\"piiData\"", piiData);
 
 			outerloop.add(respose);
 		}
@@ -164,21 +170,24 @@ public class MainController {
 		Set<String> companies = aggregatedPayload.getCompany();
 		if (companies != null && !companies.isEmpty()) {
 			for (String str : companies) {
-				piiData.add("{\"name\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+				// String str1 = "\"{\"claim_loss_dt\":\"Shaktinagara\",\"ctg\":\"R\"}\"";
+				piiData.add("{\"name\":\"" + str + "\",\"ctg\":\"R\"}");
 			}
 		}
 
 		Set<String> address = aggregatedPayload.getAddress();
 		if (address != null && !address.isEmpty()) {
 			for (String str : address) {
-				piiData.add("{\"name\":\"" + address + "\",\"ctg\":\"" + "R" + "\"}");
+				// piiData.add("{\"address\":\"" + address + "\",\"ctg\":\"" + "R" + "\"}");
+				piiData.add("{\"address\":\"" + address + "\",\"ctg\":\"R\"}");
 			}
 		}
 
 		Set<String> location = aggregatedPayload.getCompany();
 		if (location != null && !location.isEmpty()) {
 			for (String str : location) {
-				piiData.add("{\"location\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+				// piiData.add("{\"location\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+				piiData.add("{\"location\":\"" + str + "\",\"ctg\":\"R\"}");
 			}
 		}
 	}
@@ -186,43 +195,56 @@ public class MainController {
 	public void setImgValues(List<ImagingAgg> imagingAggList, int j, List imgAddAllValues) {
 		String policyNumber = imagingAggList.get(j).getPolicyNumber();
 		if (policyNumber != null) {
-			imgAddAllValues.add("{\"claim_nbr\":\"" + policyNumber + "\",\"ctg\":\"" + "R" + "\"}");
+			// imgAddAllValues.add("{\"policy_nbr\":\"" + policyNumber + "\",\"ctg\":\"" +
+			// "R" + "\"}");
+			imgAddAllValues.add("{\"policy_nbr\":\"" + policyNumber + "\",\"ctg\":\"R\"}");
 		}
 
 		Set<String> names = imagingAggList.get(j).getName();
 		if (names != null && !names.isEmpty()) {
 			for (String str : names) {
-				imgAddAllValues.add("{\"name\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+				// imgAddAllValues.add("{\"name\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+				imgAddAllValues.add("{\"name\":\"" + str + "\",\"ctg\":\"R\"}");
 			}
 		}
 	}
 
 	public List claimFieldExtractor(List<Clm_fldsAgg> clm_fldsAggOrg) {
 		List clmfieldListORG = new ArrayList<>();
+
 		for (int k = 0; k < clm_fldsAggOrg.size(); k++) {
+
 			List<String> clmfieldList = new ArrayList<>();
 
 			String clmNumber = clm_fldsAggOrg.get(k).getClaim_nbr();
-			clmfieldList.add("{\"claim_nbr\":\"" + clmNumber + "\",\"ctg\":\"" + "R" + "\"}");
+			// clmfieldList.add("{\"claim_nbr\":\"" + clmNumber + "\",\"ctg\":\"" + "R" +
+			// "\"}");
+			clmfieldList.add("{\"claim_nbr\":\"" + clmNumber + "\",\"ctg\":\"R\"}");
 
 			Set<String> setclmPeril = clm_fldsAggOrg.get(k).getClaim_peril();
 			if (setclmPeril != null && !setclmPeril.isEmpty()) {
 				for (String str : setclmPeril) {
-					clmfieldList.add("{\"claim_peril\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+					// clmfieldList.add("{\"claim_peril\":\"" + str + "\",\"ctg\":\"" + "R" +
+					// "\"}");
+					clmfieldList.add("{\"claim_peril\":\"" + str + "\",\"ctg\":\"R\"}");
 				}
 			}
 
 			Set<String> setclmLossdate = clm_fldsAggOrg.get(k).getClaim_loss_dt();
 			if (setclmLossdate != null && !setclmLossdate.isEmpty()) {
 				for (String str : setclmLossdate) {
-					clmfieldList.add("{\"claim_loss_dt\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+					// clmfieldList.add("{\"claim_loss_dt\":\"" + str + "\",\"ctg\":\"" + "R" +
+					// "\"}");
+					clmfieldList.add("{\"claim_loss_dt\":\"" + str + "\",\"ctg\":\"R\"}");
 				}
 			}
 
 			Set<String> setclmStatus = clm_fldsAggOrg.get(k).getClaim_status();
 			if (setclmStatus != null && !setclmStatus.isEmpty()) {
 				for (String str : setclmStatus) {
-					clmfieldList.add("{\"claim_status\":\"" + str + "\",\"ctg\":\"" + "R" + "\"}");
+					// clmfieldList.add("{\"claim_status\":\"" + str + "\",\"ctg\":\"" + "R" +
+					// "\"}");
+					clmfieldList.add("{\"claim_status\":\"" + str + "\",\"ctg\":\"R\"}");
 				}
 			}
 			clmfieldListORG.add(clmfieldList);
@@ -230,4 +252,65 @@ public class MainController {
 		return clmfieldListORG;
 	}
 
+	public static String unescape(String input) {
+		StringBuilder builder = new StringBuilder();
+
+		int i = 0;
+		while (i < input.length()) {
+			char delimiter = input.charAt(i);
+			i++; // consume letter or backslash
+
+			if (delimiter == '\\' && i < input.length()) {
+
+				// consume first after backslash
+				char ch = input.charAt(i);
+				i++;
+
+				if (ch == '\\' || ch == '/' || ch == '"' || ch == '\'') {
+					builder.append(ch);
+				} else if (ch == 'n')
+					builder.append('\n');
+				else if (ch == 'r')
+					builder.append('\r');
+				else if (ch == 't')
+					builder.append('\t');
+				else if (ch == 'b')
+					builder.append('\b');
+				else if (ch == 'f')
+					builder.append('\f');
+				else if (ch == 'u') {
+
+					StringBuilder hex = new StringBuilder();
+
+					// expect 4 digits
+					if (i + 4 > input.length()) {
+						throw new RuntimeException("Not enough unicode digits! ");
+					}
+					for (char x : input.substring(i, i + 4).toCharArray()) {
+						if (!Character.isLetterOrDigit(x)) {
+							throw new RuntimeException("Bad character in unicode escape.");
+						}
+						hex.append(Character.toLowerCase(x));
+					}
+					i += 4; // consume those four digits.
+
+					int code = Integer.parseInt(hex.toString(), 16);
+					builder.append((char) code);
+				} else {
+					throw new RuntimeException("Illegal escape sequence: \\" + ch);
+				}
+			} else { // it's not a backslash, or it's the last character.
+				builder.append(delimiter);
+			}
+		}
+		
+		String str2 = builder.toString();
+		String str3 = str2.replace("\"{", "{");
+		String str4 = str3.replace("}\"", "}");
+		String str5 = str4.replace("\"[", "\"");
+		String str6 = str5.replace("]\"", "\"");
+
+		//return builder.toString();
+		return str6;
+	}
 }
